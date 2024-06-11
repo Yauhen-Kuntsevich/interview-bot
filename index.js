@@ -1,5 +1,12 @@
-import 'dotenv/config';
-import { Bot, GrammyError, HttpError, InlineKeyboard, Keyboard } from 'grammy';
+require('dotenv').config();
+const {
+  Bot,
+  GrammyError,
+  HttpError,
+  Keyboard,
+  InlineKeyboard,
+} = require('grammy');
+const getRandomQuestion = require('./utils');
 
 const bot = new Bot(process.env.BOT_API_KEY);
 
@@ -22,28 +29,23 @@ bot.command('start', async (ctx) => {
 });
 
 bot.hears(['HTML', 'CSS', 'JavaScript', 'React'], (ctx) => {
-  const inlineKeybord = new InlineKeyboard()
-    .text(
-      'Показать ответ',
-      JSON.stringify({
-        type: ctx.message.text,
-        questionId: 1,
-      })
-    )
-    .text('Отменить', 'cancel');
+  const topic = ctx.message.text;
+  const question = getRandomQuestion(topic);
 
-  ctx.reply(`Что такое ${ctx.message.text}?`, {
+  const inlineKeybord = new InlineKeyboard().text(
+    'Узнать ответ',
+    JSON.stringify({
+      type: ctx.message.text,
+      questionId: question.id,
+    })
+  );
+
+  ctx.reply(question.text, {
     reply_markup: inlineKeybord,
   });
 });
 
 bot.on('callback_query:data', async (ctx) => {
-  if (ctx.callbackQuery.data === 'cancel') {
-    await ctx.reply('Отменено!');
-    await ctx.answerCallbackQuery('Галя, отмена!');
-    return;
-  }
-
   const callbackData = JSON.parse(ctx.callbackQuery.data);
   await ctx.reply(`${callbackData.type} - составляющая фронтенда.`);
   await ctx.answerCallbackQuery();
