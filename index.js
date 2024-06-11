@@ -22,8 +22,31 @@ bot.command('start', async (ctx) => {
 });
 
 bot.hears(['HTML', 'CSS', 'JavaScript', 'React'], (ctx) => {
-  const inlineKeybord = new InlineKeyboard();
-  ctx.reply(`Что такое ${ctx.message.text}?`);
+  const inlineKeybord = new InlineKeyboard()
+    .text(
+      'Показать ответ',
+      JSON.stringify({
+        type: ctx.message.text,
+        questionId: 1,
+      })
+    )
+    .text('Отменить', 'cancel');
+
+  ctx.reply(`Что такое ${ctx.message.text}?`, {
+    reply_markup: inlineKeybord,
+  });
+});
+
+bot.on('callback_query:data', async (ctx) => {
+  if (ctx.callbackQuery.data === 'cancel') {
+    await ctx.reply('Отменено!');
+    await ctx.answerCallbackQuery('Галя, отмена!');
+    return;
+  }
+
+  const callbackData = JSON.parse(ctx.callbackQuery.data);
+  await ctx.reply(`${callbackData.type} - составляющая фронтенда.`);
+  await ctx.answerCallbackQuery();
 });
 
 bot.catch((err) => {
