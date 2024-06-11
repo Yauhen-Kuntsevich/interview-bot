@@ -1,12 +1,29 @@
 import 'dotenv/config';
-import { Bot, GrammyError, HttpError } from 'grammy';
+import { Bot, GrammyError, HttpError, InlineKeyboard, Keyboard } from 'grammy';
 
 const bot = new Bot(process.env.BOT_API_KEY);
 
 bot.command('start', async (ctx) => {
+  const startKeyboard = new Keyboard()
+    .text('HTML')
+    .text('CSS')
+    .row()
+    .text('JavaScript')
+    .text('React')
+    .resized();
+
   await ctx.reply(
     'Привет! Я бот-фронтендер! 🌚\nЯ помогу тебе подготовиться к собеседованию по HTML, CSS, JavaScript и React!'
   );
+
+  await ctx.reply('Что хочешь повторить?', {
+    reply_markup: startKeyboard,
+  });
+});
+
+bot.hears(['HTML', 'CSS', 'JavaScript', 'React'], (ctx) => {
+  const inlineKeybord = new InlineKeyboard();
+  ctx.reply(`Что такое ${ctx.message.text}?`);
 });
 
 bot.catch((err) => {
