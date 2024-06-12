@@ -6,7 +6,7 @@ const {
   Keyboard,
   InlineKeyboard,
 } = require('grammy');
-const getRandomQuestion = require('./utils');
+const { getRandomQuestion, getCorrectAnswer } = require('./utils');
 
 const bot = new Bot(process.env.BOT_API_KEY);
 
@@ -32,13 +32,30 @@ bot.hears(['HTML', 'CSS', 'JavaScript', 'React'], (ctx) => {
   const topic = ctx.message.text;
   const question = getRandomQuestion(topic);
 
-  const inlineKeybord = new InlineKeyboard().text(
-    'Узнать ответ',
-    JSON.stringify({
-      type: ctx.message.text,
-      questionId: question.id,
-    })
-  );
+  let inlineKeybord;
+
+  if (question.hasOptions) {
+    const buttonRows = question.options.map((option) => [
+      InlineKeyboard.text(
+        option.text,
+        JSON.stringify({
+          type: `${topic}-option`,
+          isCorrect: option.isCorrect,
+          questionId: question.id,
+        })
+      ),
+    ]);
+
+    inlineKeybord = InlineKeyboard.from(buttonRows);
+  } else {
+    inlineKeybord = new InlineKeyboard().text(
+      'Узнать ответ',
+      JSON.stringify({
+        type: topic,
+        questionId: question.id,
+      })
+    );
+  }
 
   ctx.reply(question.text, {
     reply_markup: inlineKeybord,
@@ -47,7 +64,29 @@ bot.hears(['HTML', 'CSS', 'JavaScript', 'React'], (ctx) => {
 
 bot.on('callback_query:data', async (ctx) => {
   const callbackData = JSON.parse(ctx.callbackQuery.data);
-  await ctx.reply(`${callbackData.type} - составляющая фронтенда.`);
+
+  if (!callbackData.type.includes('option')) {
+    const answer = getCorrectAnswer(callbackData.type, callbackData.questionId);
+    await ctx.reply(answer, {
+      parse_mode: 'HTML',
+      disable_web_page_preview: true,
+    });
+    await ctx.answerCallbackQuery();
+    return;
+  }
+
+  if (callbackData.isCorrect) {
+    await ctx.reply('Правильно ✅');
+    await ctx.answerCallbackQuery();
+    return;
+  }
+
+  const answer = getCorrectAnswer(
+    callbackData.type.split('-')[0],
+    callbackData.questionId
+  );
+
+  await ctx.reply(`Неправильно. Правильный ответ: ${answer}`);
   await ctx.answerCallbackQuery();
 });
 
