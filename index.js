@@ -7,6 +7,7 @@ const {
   InlineKeyboard,
 } = require('grammy');
 const { getRandomQuestion, getCorrectAnswer } = require('./utils');
+const questions = require('./questions.json');
 
 const bot = new Bot(process.env.BOT_API_KEY);
 
@@ -17,10 +18,12 @@ bot.command('start', async (ctx) => {
     .row()
     .text('JavaScript')
     .text('React')
+    .row()
+    .text('Случайный вопрос')
     .resized();
 
   await ctx.reply(
-    'Привет! Я бот-фронтендер! 🌚\nЯ помогу тебе подготовиться к собеседованию по HTML, CSS, JavaScript и React!'
+    'Привет! Я бот-фронтендер! 🌚\nЯ помогу тебе подготовиться к собеседованию по HTML, CSS, JavaScript и React!',
   );
 
   await ctx.reply('Что хочешь повторить?', {
@@ -28,8 +31,14 @@ bot.command('start', async (ctx) => {
   });
 });
 
-bot.hears(['HTML', 'CSS', 'JavaScript', 'React'], (ctx) => {
-  const topic = ctx.message.text;
+bot.hears(['HTML', 'CSS', 'JavaScript', 'React', 'Случайный вопрос'], (ctx) => {
+  let topic = ctx.message.text;
+
+  if (topic === 'Случайный вопрос') {
+    const questionTopics = Object.keys(questions);
+    topic = questionTopics[Math.floor(Math.random() * questionTopics.length)];
+  }
+
   const question = getRandomQuestion(topic);
 
   let inlineKeybord;
@@ -42,7 +51,7 @@ bot.hears(['HTML', 'CSS', 'JavaScript', 'React'], (ctx) => {
           type: `${topic}-option`,
           isCorrect: option.isCorrect,
           questionId: question.id,
-        })
+        }),
       ),
     ]);
 
@@ -53,7 +62,7 @@ bot.hears(['HTML', 'CSS', 'JavaScript', 'React'], (ctx) => {
       JSON.stringify({
         type: topic,
         questionId: question.id,
-      })
+      }),
     );
   }
 
@@ -83,7 +92,7 @@ bot.on('callback_query:data', async (ctx) => {
 
   const answer = getCorrectAnswer(
     callbackData.type.split('-')[0],
-    callbackData.questionId
+    callbackData.questionId,
   );
 
   await ctx.reply(`Неправильно. Правильный ответ: ${answer}`);
