@@ -6,8 +6,11 @@ const {
   Keyboard,
   InlineKeyboard,
 } = require('grammy');
-const { getRandomQuestion, getCorrectAnswer } = require('./utils');
-const questions = require('./questions.json');
+const {
+  getRandomQuestion,
+  getRandomTopic,
+  getCorrectAnswer,
+} = require('./utils');
 
 const bot = new Bot(process.env.BOT_API_KEY);
 
@@ -32,14 +35,19 @@ bot.command('start', async (ctx) => {
 });
 
 bot.hears(['HTML', 'CSS', 'JavaScript', 'React', 'Случайный вопрос'], (ctx) => {
-  let topic = ctx.message.text;
+  const topic = ctx.message.text;
+  let randomTopic;
+  let selectedTopic;
+  let question;
 
   if (topic === 'Случайный вопрос') {
-    const questionTopics = Object.keys(questions);
-    topic = questionTopics[Math.floor(Math.random() * questionTopics.length)];
+    randomTopic = getRandomTopic();
+    selectedTopic = randomTopic;
+    question = getRandomQuestion(randomTopic);
+  } else {
+    question = getRandomQuestion(topic);
+    selectedTopic = topic;
   }
-
-  const question = getRandomQuestion(topic);
 
   let inlineKeybord;
 
@@ -48,7 +56,7 @@ bot.hears(['HTML', 'CSS', 'JavaScript', 'React', 'Случайный вопро�
       InlineKeyboard.text(
         option.text,
         JSON.stringify({
-          type: `${topic}-option`,
+          type: `${selectedTopic}-option`,
           isCorrect: option.isCorrect,
           questionId: question.id,
         }),
@@ -60,7 +68,7 @@ bot.hears(['HTML', 'CSS', 'JavaScript', 'React', 'Случайный вопро�
     inlineKeybord = new InlineKeyboard().text(
       'Узнать ответ',
       JSON.stringify({
-        type: topic,
+        type: selectedTopic,
         questionId: question.id,
       }),
     );

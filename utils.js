@@ -9,6 +9,11 @@ const getRandomQuestion = (topic) => {
   return questions[questionTopic][randomQuestionIndex];
 };
 
+const getRandomTopic = () => {
+  const questionTopics = Object.keys(questions);
+  return questionTopics[Math.floor(Math.random() * questionTopics.length)];
+};
+
 const getCorrectAnswer = (topic, id) => {
   const questionTopic = topic.toLowerCase();
 
@@ -23,4 +28,4 @@ const getCorrectAnswer = (topic, id) => {
   return question.options.find((option) => option.isCorrect).text;
 };
 
-module.exports = { getRandomQuestion, getCorrectAnswer };
+module.exports = { getRandomQuestion, getRandomTopic, getCorrectAnswer };
